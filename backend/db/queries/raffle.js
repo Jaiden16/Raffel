@@ -2,7 +2,7 @@ const db = require('../db');
 
 const getRaffles = async (req, res, next) => {
     try {
-        const raffle = await db.any("SELECT * FROM raffles");
+        const raffle = await db.any("SELECT id,name, created_at,raffled_at, winner_id FROM raffles");
         res.json({
             data: raffle,
             message: 'success'
@@ -50,11 +50,18 @@ const postRaffle = async (req, res, next) => {
 //get /raffles/:id - retrieve a single raffle by its id
 const getSingleRaffle = async (req, res, next) => {
     try {
-        let raffle = await db.oneOrNone(`SELECT * FROM raffles where id = ${req.params.id} `)
-        res.json({
-            data: raffle,
-            message: 'retrieved raffle'
-        }).status(200)
+        let raffle = await db.oneOrNone(`SELECT id,name, created_at,raffled_at, winner_idFROM raffles where id = ${req.params.id} `)
+
+        if (raffle) {
+            res.json({
+                data: raffle,
+                message: 'retrieved raffle'
+            }).status(200)
+        } else {
+            res.json({
+                message: 'no raffle'
+            })
+        }
 
     } catch (err) {
         console.log(err)
@@ -67,17 +74,24 @@ const getSingleRaffle = async (req, res, next) => {
 
 
 //get /raffles/:id/participants retrieve all participants of a raffle
-const getRaffleParticipants = async(req,res,next) =>{
-    let query = `SELECT firstname,lastname,email,phone,registered_at FROM raffles 
+const getRaffleParticipants = async (req, res, next) => {
+    let query = `SELECT users.id, raffle_id, firstname,lastname, email, phone FROM raffles 
     JOIN users ON (users.raffle_id = ${req.params.id})`
-    try{
+    try {
         let users = await db.any(query)
-        res.status(200).json({
-            data: users,
-            message: 'success'
-        })
+        if (users) {
+            res.json({
+                data: users,
+                message: 'success'
+            })
+        } else {
+            res.json({
+                message: 'no participants'
+            })
+        }
 
-    }catch(err){
+
+    } catch (err) {
         console.log(err)
     }
 
@@ -94,8 +108,8 @@ const postParticipant = async (req, res, next) => {
         if (req.body.first && req.body.last && req.body.email) {
             info.id = req.params.id
             info.first = req.body.first,
-            info.last = req.body.last,
-            info.email = req.body.email
+                info.last = req.body.last,
+                info.email = req.body.email
         }
 
         if (req.body.phone) {
@@ -104,7 +118,6 @@ const postParticipant = async (req, res, next) => {
         } else {
             info.phone = "n/a"
             info.registered = date.toISOString()
-
         }
 
         let payload = await db.one(fullQuery, info)
@@ -120,5 +133,89 @@ const postParticipant = async (req, res, next) => {
     }
 }
 
+const pickWinner = async (req, res, next) => {
+    let secret = req.body.token
 
-module.exports = { getRaffles, postRaffle, getSingleRaffle,getRaffleParticipants, postParticipant };
+
+
+
+    try {
+        let secretQuery = await db.oneOrNone(`SELECT secret_token from raffles WHERE id = ${req.params.id} `)
+        code = secretQuery.secret_token
+        console.log(code)
+        if (secret !== code) {
+            let error = { message: "invalid token" }
+            throw (error)
+        }
+
+
+        //check to see if there is raffle in first place
+        let raffle = await db.oneOrNone(`SELECT * FROM raffles where id = ${req.params.id} `)
+        if (!raffle) {
+            let err = "no raffle"
+            throw (err)
+        }
+        //check to see if current raffle has a winner
+        // let query1 = `SELECT winner_id from raffles Where id = ${req.params.id}`
+        let checkWinner = await db.oneOrNone(`SELECT winner_id from raffles Where id = ${req.params.id}`)
+
+        console.log('line 152', checkWinner.winner_id)
+
+        if (checkWinner.winner_id === null) {
+            console.log(checkWinner.winner_id)
+            // get all participants from  single raffle
+            let query2 = `SELECT users.id, raffle_id, firstname,lastname, email, phone FROM raffles 
+            JOIN users ON (users.raffle_id = ${req.params.id})`
+            let users = await db.any(query2)
+            let winner = Math.ceil((Math.random() * users.length))
+            console.log("line 161", users[winner])
+
+            //insert into raffle time raffle was raffled and winner it
+            let date = new Date()
+            update = {
+                time: date.toISOString(),
+                winner_id: winner
+            }
+            let query3 = 'UPDATE raffles SET raffled_at = $/time/, winner_id = $/winner_id/'
+            let endQuery = `WHERE raffles.id = ${req.params.id} RETURNING *`
+            let fullQuery = query3 + endQuery
+            console.log(query3)
+            let patch = await db.one(fullQuery, update)
+            console.log(patch)
+
+            // return the winner
+            let raffleWinner = await db.one(`SELECT users.id,firstname,lastname,email,phone,registered_at FROM raffles JOIN users ON (users.id= raffles.winner_id)
+            WHERE raffles.winner_id = ${winner}`)
+            console.log(raffleWinner)
+            res.json({
+                data: raffleWinner,
+                message: "winner picked"
+            }).status(200)
+
+        } else {
+            let raffleWinner = await db.one(`SELECT users.id, firstname,lastname,email,phone,registered_at FROM raffles JOIN users ON (users.id = raffles.winner_id)
+            WHERE raffles.winner_id = users.id`)
+            console.log(raffleWinner)
+            res.json({
+                data: raffleWinner,
+                message: "Recent Winner"
+            }).status(200)
+        }
+
+
+
+
+
+    } catch (err) {
+        res.json({
+            data: err,
+            message: "no raffle here"
+        }).status(404)
+        console.log(err)
+    }
+
+}
+
+
+
+module.exports = { getRaffles, postRaffle, getSingleRaffle, getRaffleParticipants, postParticipant, pickWinner };

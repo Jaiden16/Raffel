@@ -14,7 +14,7 @@ CREATE TABLE raffles(
     name VARCHAR,
     secret_token VARCHAR,
     created_at TIMESTAMPTZ,
-    raffled_at TIMESTAMPTZ,
+    raffled_at TIMESTAMPTZ UNIQUE,
     winner_id INT UNIQUE
 );
 
