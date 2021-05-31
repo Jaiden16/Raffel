@@ -2,9 +2,9 @@ const db = require('../db');
 
 const getRaffles = async (req, res, next) => {
     try {
-        const raffle = await db.any("SELECT id,name, created_at,raffled_at, winner_id FROM raffles");
+        const raffle = await db.any("SELECT id,name, created_at,raffled_at, winner_id,raffled_at FROM raffles");
         res.json({
-            data: raffle,
+            raffles: raffle,
             message: 'success'
         }).status(200)
 
@@ -50,11 +50,11 @@ const postRaffle = async (req, res, next) => {
 //get /raffles/:id - retrieve a single raffle by its id
 const getSingleRaffle = async (req, res, next) => {
     try {
-        let raffle = await db.oneOrNone(`SELECT id,name, created_at,raffled_at, winner_idFROM raffles where id = ${req.params.id} `)
+        let raffle = await db.any(`SELECT id,name, created_at,raffled_at, winner_id FROM raffles WHERE raffles.id = ${req.params.id} `)
 
         if (raffle) {
             res.json({
-                data: raffle,
+                raffle: raffle,
                 message: 'retrieved raffle'
             }).status(200)
         } else {

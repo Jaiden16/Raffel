@@ -1,0 +1,28 @@
+.nav-list{
+    list-style-type: none;
+    background-color: white;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    align-self: center;
+    /* justify-self: center; */
+}
+
+#nav-item{
+    display: inline-block;
+    border:1px solid lightgray;
+}
+
+li a{
+    display: inline-block;
+    color: black;
+    text-align: center;
+    text-decoration: none;
+    padding: 14px 16px;
+    height: 3em;
+    width: 8em;
+}
+
+a:hover{
+    background-color: lightgray;
+}
