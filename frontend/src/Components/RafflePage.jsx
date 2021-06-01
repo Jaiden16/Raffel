@@ -28,7 +28,7 @@ export default function RafflePage(props) {
 
     const getSingleRaffle = async () => {
         let url = `/raffles/${raffleId}`
-        let res = await axios(url)
+        let res = await axios.get(url)
         setRaffleName(res.data.raffle[0].name)
     }
 

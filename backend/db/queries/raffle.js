@@ -50,7 +50,7 @@ const postRaffle = async (req, res, next) => {
 //get /raffles/:id - retrieve a single raffle by its id
 const getSingleRaffle = async (req, res, next) => {
     try {
-        let raffle = await db.any(`SELECT id,name, created_at,raffled_at, winner_id FROM raffles WHERE raffles.id = ${req.params.id} `)
+        let raffle = await db.any(`SELECT id,name, created_at,raffled_at, winner_id, secret_token FROM raffles WHERE raffles.id = ${req.params.id} `)
 
         if (raffle) {
             res.json({
@@ -140,15 +140,6 @@ const pickWinner = async (req, res, next) => {
 
 
     try {
-        let secretQuery = await db.oneOrNone(`SELECT secret_token from raffles WHERE id = ${req.params.id} `)
-        code = secretQuery.secret_token
-        console.log(code)
-        if (secret !== code) {
-            let error = { message: "invalid token" }
-            throw (error)
-        }
-
-
         //check to see if there is raffle in first place
         let raffle = await db.oneOrNone(`SELECT * FROM raffles where id = ${req.params.id} `)
         if (!raffle) {
@@ -163,6 +154,16 @@ const pickWinner = async (req, res, next) => {
 
         if (checkWinner.winner_id === null) {
             console.log(checkWinner.winner_id)
+            
+            //check to see if token is right
+            let secretQuery = await db.oneOrNone(`SELECT secret_token from raffles WHERE id = ${req.params.id} `)
+            let code = secretQuery.secret_token
+            console.log(code)
+            if (secret !== code) {
+                let error = { message: "invalid token" }
+                throw (error)
+            }
+
             // get all participants from  single raffle
             let query2 = `SELECT users.id, raffle_id, firstname,lastname, email, phone FROM raffles 
             JOIN users ON (users.raffle_id = ${req.params.id})`
@@ -184,20 +185,20 @@ const pickWinner = async (req, res, next) => {
             console.log(patch)
 
             // return the winner
-            let raffleWinner = await db.one(`SELECT users.id,firstname,lastname,email,phone,registered_at FROM raffles JOIN users ON (users.id= raffles.winner_id)
+            let raffleWinner = await db.any(`SELECT users.id,firstname,lastname,email,phone,registered_at FROM raffles JOIN users ON (users.id= raffles.winner_id)
             WHERE raffles.winner_id = ${winner}`)
-            console.log(raffleWinner)
+            console.log(raffleWinner[0])
             res.json({
-                data: raffleWinner,
+                data: raffleWinner[0],
                 message: "winner picked"
             }).status(200)
 
         } else {
-            let raffleWinner = await db.one(`SELECT users.id, firstname,lastname,email,phone,registered_at FROM raffles JOIN users ON (users.id = raffles.winner_id)
+            let raffleWinner = await db.any(`SELECT users.id, firstname,lastname,email,phone,registered_at FROM raffles JOIN users ON (users.id = raffles.winner_id)
             WHERE raffles.winner_id = users.id`)
-            console.log(raffleWinner)
+            console.log(raffleWinner[0])
             res.json({
-                data: raffleWinner,
+                data: raffleWinner[0],
                 message: "Recent Winner"
             }).status(200)
         }
@@ -208,7 +209,7 @@ const pickWinner = async (req, res, next) => {
 
     } catch (err) {
         res.json({
-            data: err,
+            response: err,
             message: "no raffle here"
         }).status(404)
         console.log(err)
