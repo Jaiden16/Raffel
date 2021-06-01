@@ -81,7 +81,7 @@ const getRaffleParticipants = async (req, res, next) => {
         let users = await db.any(query)
         if (users) {
             res.json({
-                data: users,
+                participants: users,
                 message: 'success'
             })
         } else {

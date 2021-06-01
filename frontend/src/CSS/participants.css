@@ -1,0 +1,16 @@
+.card{
+    display: flex;
+    text-align: center;
+    width: 50%;
+    margin:2em;
+    justify-self: center;
+    text-align: left;
+}
+#left{
+    margin-right: 1em;
+}
+
+#pic{
+    border-radius: 10%;
+    margin:10px;
+}

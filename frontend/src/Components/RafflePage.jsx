@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import TextField from '@material-ui/core/TextField';
-import Button from '@material-ui/core/Button'
+import { Button } from '@material-ui/core/'
 import { makeStyles } from '@material-ui/core/styles';
 import axios from 'axios';
 import NavBar from './NavBar'
@@ -23,7 +23,7 @@ export default function RafflePage(props) {
     const [raffleName, setRaffleName] = useState("")
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
-    const [email, setEmail] = useState("");
+    const [userEmail, setEmail] = useState("");
     const [phone, setPhone] = useState("");
 
     const getSingleRaffle = async () => {
@@ -32,12 +32,39 @@ export default function RafflePage(props) {
         setRaffleName(res.data.raffle[0].name)
     }
 
+    const reset = () => {
+        setFirstName("")
+        setLastName("")
+        setEmail("")
+        setPhone("")
+    }
+
     useEffect(() => {
         getSingleRaffle();
 
     }, [])
 
-    const HandleSubmit = () => {
+    const HandleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            let res = {
+                first: firstName,
+                last: lastName,
+                email: userEmail
+            }
+
+            if (phone) {
+                res.phone = phone
+            }
+            let url = `/raffles/${raffleId}/participants`
+            let body = await axios.post(url, res)
+            console.log('body', body)
+            reset()
+
+
+        } catch (err) {
+
+        }
 
     }
 
@@ -47,8 +74,8 @@ export default function RafflePage(props) {
     return (
         <div >
             <h1>{raffleName}</h1>
-            <NavBar />
-            <div className={classes.root}>
+            <NavBar id ={raffleId}/>
+            <div className={classes.root}>‹
                 <form onSubmit={HandleSubmit}>
                     <h2>Register to Participate in Raffle</h2>
                     <div className="Fields" style={{ margin: 10, alignSelf: "center", justifyContent: 'center' }}>
@@ -57,7 +84,7 @@ export default function RafflePage(props) {
                             id="margin-none"
                             placeholder='First Name'
                             value={firstName}
-                            onChange={(e)=>setFirstName(e.target.value)}
+                            onChange={(e) => setFirstName(e.target.value)}
                             className={classes.textField}
                             required
                             helperText="Required"
@@ -67,7 +94,7 @@ export default function RafflePage(props) {
                             id="margin-none"
                             placeholder='First Name'
                             value={lastName}
-                            onChange={(e)=>setLastName(e.target.value)}
+                            onChange={(e) => setLastName(e.target.value)}
                             className={classes.textField}
                             required
                             helperText="Required"
@@ -110,7 +137,7 @@ export default function RafflePage(props) {
                             type="email"
                             id="standard-full-width"
                             style={{ margin: 10 }}
-                            value={email}
+                            value={userEmail}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Email@domain.com"
                             helperText="Required"
@@ -137,8 +164,13 @@ export default function RafflePage(props) {
                         />
                     </div>
                     {/* {message ? <p>{message}</p> : null} */}
-                    <Button variant="contained" color="primary">Submit</Button>
-                    <Button variant="contained" color="seconday">Reset</Button>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        type="submit"
+                    >
+                        Submit</Button>
+                    <Button variant="contained" color="seconday" onClick={() => reset()}>Reset</Button>
                 </form>
             </div>
 
