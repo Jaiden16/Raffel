@@ -76,6 +76,7 @@ export default function RafflePage(props) {
             <h1>{raffleName}</h1>
             <NavBar id ={raffleId}/>
             <div className={classes.root}>‹
+                
                 <form onSubmit={HandleSubmit}>
                     <h2>Register to Participate in Raffle</h2>
                     <div className="Fields" style={{ margin: 10, alignSelf: "center", justifyContent: 'center' }}>

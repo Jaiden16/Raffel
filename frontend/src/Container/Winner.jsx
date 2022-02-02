@@ -1,8 +1,8 @@
 import axios from 'axios';
 import React,{useEffect,useState} from 'react'
 import NavBar from '../Components/NavBar'
-import NoWinner from "../Components/noWinner"
-import WinnerCard from "../Components/isWinner"
+import NoWinner from "../Components/NoWinner"
+import IsWinner from "../Components/IsWinner"
 
 export default function WinnerPage(props){
     const raffleId = props.match.params.id;
@@ -18,13 +18,13 @@ export default function WinnerPage(props){
     useEffect(()=>{
         getSingleRaffle()
     },[])
-    console.log(raffleId)
+    console.log("winner containter", isWinner)
     
     return(
         <div>
             <h1>{raffleName}</h1>
-            <NavBar/>
-            {isWinner? <WinnerCard id={raffleId}/>: <NoWinner id ={raffleId}/>}
+            <NavBar id = {raffleId}/>
+            {isWinner? <IsWinner id={raffleId}/>: <NoWinner id ={raffleId}/>}
         </div>
     )
 }

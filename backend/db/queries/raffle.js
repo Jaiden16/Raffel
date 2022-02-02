@@ -75,10 +75,12 @@ const getSingleRaffle = async (req, res, next) => {
 
 //get /raffles/:id/participants retrieve all participants of a raffle
 const getRaffleParticipants = async (req, res, next) => {
-    let query = `SELECT users.id, raffle_id, firstname,lastname, email, phone FROM raffles 
-    JOIN users ON (users.raffle_id = ${req.params.id})`
     try {
-        let users = await db.any(query)
+        // let query = `SELECT users.id, raffle_id, firstname,lastname, email, phone FROM raffles 
+        // JOIN users ON (users.raffle_id = ${req.params.id})`
+        let users = await db.any(`SELECT users.id, users.raffle_id, users.firstname, users.lastname, users.email, users.phone, users.registered_at FROM raffles
+            JOIN users ON (users.raffle_id = raffles.id)
+            WHERE raffles.id = ${req.params.id}`)
         if (users) {
             res.json({
                 participants: users,
@@ -150,32 +152,40 @@ const pickWinner = async (req, res, next) => {
         // let query1 = `SELECT winner_id from raffles Where id = ${req.params.id}`
         let checkWinner = await db.oneOrNone(`SELECT winner_id from raffles Where id = ${req.params.id}`)
 
-        console.log('line 152', checkWinner.winner_id)
+        console.log('check winner result', checkWinner.winner_id)
 
         if (checkWinner.winner_id === null) {
+            
             console.log(checkWinner.winner_id)
             
             //check to see if token is right
             let secretQuery = await db.oneOrNone(`SELECT secret_token from raffles WHERE id = ${req.params.id} `)
             let code = secretQuery.secret_token
-            console.log(code)
+            
+            console.log("code token",code)
+            
             if (secret !== code) {
                 let error = { message: "invalid token" }
                 throw (error)
             }
 
             // get all participants from  single raffle
-            let query2 = `SELECT users.id, raffle_id, firstname,lastname, email, phone FROM raffles 
-            JOIN users ON (users.raffle_id = ${req.params.id})`
+            let query2 = `SELECT users.id, users.raffle_id, users.firstname, users.lastname, users.email, users.phone, users.registered_at FROM raffles
+            JOIN users ON (users.raffle_id = raffles.id)
+            WHERE raffles.id = ${req.params.id}`
+            
             let users = await db.any(query2)
-            let winner = Math.ceil((Math.random() * users.length))
-            console.log("line 161", users[winner])
+            console.log(users)
+            let winnerIndex = Math.floor((Math.random() * users.length))
+            let winner = users[winnerIndex];
+            
+            console.log("winner", users[winnerIndex])
 
             //insert into raffle time raffle was raffled and winner it
             let date = new Date()
             update = {
                 time: date.toISOString(),
-                winner_id: winner
+                winner_id: winner.id
             }
             let query3 = 'UPDATE raffles SET raffled_at = $/time/, winner_id = $/winner_id/'
             let endQuery = `WHERE raffles.id = ${req.params.id} RETURNING *`
@@ -186,19 +196,19 @@ const pickWinner = async (req, res, next) => {
 
             // return the winner
             let raffleWinner = await db.any(`SELECT users.id,firstname,lastname,email,phone,registered_at FROM raffles JOIN users ON (users.id= raffles.winner_id)
-            WHERE raffles.winner_id = ${winner}`)
-            console.log(raffleWinner[0])
+            WHERE raffles.winner_id = ${winner.id}`)
+            console.log("returned winner", raffleWinner)
             res.json({
-                data: raffleWinner[0],
+                data: raffleWinner,
                 message: "winner picked"
             }).status(200)
 
         } else {
             let raffleWinner = await db.any(`SELECT users.id, firstname,lastname,email,phone,registered_at FROM raffles JOIN users ON (users.id = raffles.winner_id)
-            WHERE raffles.winner_id = users.id`)
-            console.log(raffleWinner[0])
+            WHERE raffles.id = ${req.params.id}`)
+            console.log(raffleWinner)
             res.json({
-                data: raffleWinner[0],
+                data: raffleWinner,
                 message: "Recent Winner"
             }).status(200)
         }

@@ -20,14 +20,122 @@ export default function Home() {
     const [raffleToken, setRaffleToken] = useState("");
     const [message, setMessage] = useState("")
     const [error, setError] = useState("")
+    const [searchTerm, setSearchTerm] = useState("")
+    /*
+        create a search a search box to filter what matches in the search box
+        need a array to store the existing raffles
+        possible filter the array based on what's in the search box
+    
+        for search function create a function that take in current array as an argument and stores it
+        into a variable.
+    
+        filter the variable if searchTerm in not empty else if it is empty return original argument
+    
+    
+    */
+
+    /* 
+        raffles that are still open color code green
+        raffles that are closed light grey
+        color the whole backgroud card either green or light gray
+
+        check to see if raffles.winnerat property has a value and if so 
+        change background color accordingly
+    
+    
+    */
+
+    /* 
+        sort raffles based on which is available first and which is closed after
+
+        create function where we pass array and push nowinners into front of the array
+        and winners into back of the array
+    
+    */
+
+    const sortWinners = (raffles) =>{
+        let result = [];
+
+        for(let i = 0; i < raffles.length; i ++){
+            if(raffles[i].winner_id){
+                result.push(raffles[i])
+            }else{
+                result.unshift(raffles[i])
+            }
+        }
+        console.log("sort winners function", result)
+        return result;
+    }
+
+
+    const filteredRaffles = (raffles) => {
+        let filtered = [];
+
+        if (searchTerm) {
+            console.log(searchTerm)
+            for (let i = 0; i < raffles.length; i++) {
+                console.log(raffles[i].name)
+                if (raffles[i].name.toLowerCase().includes(searchTerm)) {
+                    filtered.push(raffles[i]);
+
+                }
+
+                console.log(raffles[i].name.includes(searchTerm))
+            }
+            console.log(filtered)
+        }
+
+        return (
+            <ul style={{ listStyleType: "none" }}>
+                {filtered.map(raffle => {
+                    return <RaffleItem
+                        key={raffle.id}
+                        id={raffle.id}
+                        name={raffle.name}
+                        winner_id={raffle.winner_id}
+                        raffled_at={raffle.raffled_at}
+                    />
+                })}
+
+            </ul>
+
+        );
+    }
+
+    const showRaffles = () => {
+        return (
+            <ul style={{ listStyleType: "none" }}>
+                {raffles.map(raffle => {
+                    return <RaffleItem
+                        key={raffle.id}
+                        id={raffle.id}
+                        name={raffle.name}
+                        winner_id={raffle.winner_id}
+                        raffled_at={raffle.raffled_at}
+                    />
+                })}
+
+            </ul>
+
+        )
+    }
+
+
+
+
+
+
+
 
     const getAllRaffles = async () => {
         let res = await axios({
             method: 'get',
             url: `/raffles`
         })
-        setRaffles(res.data.raffles)
-        console.log(res.data.raffles)
+        let result = sortWinners(res.data.raffles)
+        // console.log("line 135", result)
+        setRaffles(result)
+        
     }
 
     useEffect(() => {
@@ -56,9 +164,12 @@ export default function Home() {
         }, 3000);
     }
 
+
     return (
         <div className={classes.root}>
             <div id='form'>
+
+
                 <form onSubmit={HandleSubmit}>
                     <h2>NEW RAFFLE</h2>
                     <div className="Fields">
@@ -91,19 +202,29 @@ export default function Home() {
                 </form>
             </div>
 
-            <div id='raffles'>
-                <ul style={{listStyleType:"none"}}>
-                    {raffles.map(raffle => {
-                        return <RaffleItem
-                            key={raffle.id}
-                            id={raffle.id}
-                            name={raffle.name}
-                            winner_id={raffle.winner_id}
-                            raffled_at={raffle.raffled_at}
-                        />
-                    })}
+            <div>
+                <h3>Search</h3>
+                <div className="Search Field">
+                    <TextField
+                        required
+                        id="outlined-required"
+                        label="Search raffles"
+                        value={searchTerm}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value)
+                        }
 
-                </ul>
+                        }
+
+                        placeholder="Search Field"
+                        variant="outlined"
+                    />
+                </div>
+            </div>
+
+            <div id='raffles'>
+
+                {searchTerm ? filteredRaffles(raffles) : showRaffles()}
             </div>
         </div>
     )

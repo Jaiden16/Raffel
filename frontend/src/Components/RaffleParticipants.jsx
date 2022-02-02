@@ -30,19 +30,21 @@ export default function RaffleParticipants(props) {
 
     const getSingleRaffle = async () => {
         let url = `/raffles/${raffleId}`
-        let res = await axios(url)
+        let res = await axios.get(url)
         console.log(res)
         setRaffleName(res.data.raffle[0].name)
     }
-
+    
     const getRaffleParticipants = async () => {
         let url = `/raffles/${raffleId}/participants`
-        let res = await axios(url)
-        console.log('line40', res.data.participants)
+        let res = await axios.get(url)
+        console.log('line40', res)
+        console.log("Set")
         setParticipants(res.data.participants)
+        
     }
-
-
+    
+    
     useEffect(() => {
         getSingleRaffle();
         getRaffleParticipants();
@@ -53,7 +55,7 @@ export default function RaffleParticipants(props) {
 
 
 
-    console.log(participants)
+    console.log("participants array ",participants)
     return (
         <div >
             <h1>{raffleName} Participants</h1>
@@ -62,13 +64,14 @@ export default function RaffleParticipants(props) {
             <div style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                justifyContent: 'center'}}>
-            {participants.map(participant => {
-                return <Card key={participant.id}
-                    participant={participant} />
+                justifyContent: 'center'
+            }}>
+                {participants.map(participant => {
+                    return <Card key={participant.id}
+                        participant={participant} />
 
-            })}
-        </div>
+                })}
+            </div>
 
 
         </div >
